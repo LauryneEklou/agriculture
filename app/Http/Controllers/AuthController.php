@@ -37,9 +37,9 @@ class AuthController extends Controller
             $request->session()->regenerate();  
 
             if (Auth::user()->role === 'admin') {
-                return response()->json(['message' => 'Admin connecté avec succès']);
+                return redirect()->route('dashboard')->with('success', 'Admin Connecté avec succcès');
             } else {
-                return response()->json(['message' => 'Utilisateur connecté avec succès']);
+                return redirect()->route('transactions.index')->with('success', 'Utilisateur connecté avec succès');
             }
         }
 
@@ -58,7 +58,37 @@ class AuthController extends Controller
             ]);
         }
     }
-
+    public function showRegisterForm()
+    {
+        return view('register');  
+    }
+    public function register(Request $request)
+    {
+        // Validation des données
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:12',
+                'regex:/^(?=.*[A-Z])(?=.*[\W_]).{8,12}$/',
+            ],
+        ], [
+            'password.regex' => 'Le mot de passe doit contenir au moins une lettre majuscule, un caractère spécial et être entre 8 et 12 caractères.',
+        ]);
+    
+        // Création de l'utilisateur
+        $user = User::create([
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => bcrypt($validatedData['password']), // Hachage du mot de passe
+        ]);
+        
+        // Redirection ou réponse JSON
+        return redirect()->route('login')->with('message', 'Inscription réussie, vous pouvez vous connecter.');
+    }
     public function logout(Request $request)
     {
         Auth::logout();
